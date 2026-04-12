@@ -1,8 +1,6 @@
 #include "BFS.h"
 #include <queue>
 
-class Graph;
-
 BFSResult runBFS(const Graph& graph) {
     BFSResult result;
 
