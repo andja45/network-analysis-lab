@@ -2,19 +2,6 @@
 #include <unordered_set>
 #include <algorithm>
 
-void AppState::loadGraph(const Graph& g) {
-    graph = g;
-
-    viewMode = ViewMode::Neutral;
-    animationState = AnimationState::Idle;
-    animationStep = 0;
-    timeSinceStep = 0.0f;
-    pendingEdgeFrom = -1;
-    draggedNode = -1;
-
-    runAnalysis();
-}
-
 void AppState::runAnalysis() {
     result = analyze(graph, maxHops);
 

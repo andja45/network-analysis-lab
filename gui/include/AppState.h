@@ -26,7 +26,6 @@ struct AppState {
     int pendingEdgeFrom = -1; // when second node is selected, edge is created
     int draggedNode = -1;
 
-    void loadGraph(const Graph& g);
     void runAnalysis();
 };
 
