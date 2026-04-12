@@ -9,6 +9,7 @@ target_sources(core PRIVATE
     src/BFS.cpp
     src/BridgeDetector.cpp
     src/Analyzer.cpp
+    src/GraphExamples.cpp
 )
 
 add_executable(core_demo src/main.cpp)
