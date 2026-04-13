@@ -4,14 +4,14 @@
 #include <algorithm>
 #include <cmath>
 
-static constexpr ImU32 COL_NODE_DEFAULT = IM_COL32(180, 180, 180, 255);
-static constexpr ImU32 COL_EDGE_DEFAULT = IM_COL32(120, 120, 120, 255);
-static constexpr ImU32 COL_ROUTER      = IM_COL32(160, 160, 160, 255);
+static constexpr ImU32 COL_NODE_DEFAULT = IM_COL32( 80,  80,  80, 255);
+static constexpr ImU32 COL_EDGE_DEFAULT = IM_COL32(100, 100, 100, 255);
+static constexpr ImU32 COL_ROUTER      = IM_COL32(100, 100, 100, 255);
 static constexpr ImU32 COL_UNREACHABLE = IM_COL32(220,  60,  60, 255);
 static constexpr ImU32 COL_CRITICAL    = IM_COL32(220,  60,  60, 255);
 static constexpr ImU32 COL_SEMICRIT    = IM_COL32(230, 140,  40, 255);
 static constexpr ImU32 COL_REDUNDANT   = IM_COL32( 60, 180,  80, 255);
-static constexpr ImU32 COL_DFS_FLASH   = IM_COL32(255, 255, 255, 255);
+static constexpr ImU32 COL_DFS_FLASH   = IM_COL32(100, 160, 230, 255);
 
 static const ImU32 PROVIDER_PALETTE[] = {
     IM_COL32( 80, 140, 220, 255),
@@ -132,8 +132,12 @@ void GraphRenderer::buildBFSAnimation(const AppState& state) {
         for (int id : bfs.bfsLevels[0])
             m_animationSteps.push_back({{ {id, {}, m_providerColors.at(id), 2.0f} }});
 
-    // each level = one wave step
-    for (int d = 1; d < (int)bfs.bfsLevels.size(); ++d) {
+    // each level = one wave step, stopping at maxHops if set
+    int maxLevel = (state.maxHops != -1)
+        ? std::min(state.maxHops, (int)bfs.bfsLevels.size() - 1)
+        : (int)bfs.bfsLevels.size() - 1;
+
+    for (int d = 1; d <= maxLevel; ++d) {
         std::vector<ColorChange> step;
         for (int v : bfs.bfsLevels[d]) {
             int prov  = bfs.nearestProvider.at(v);
@@ -147,6 +151,14 @@ void GraphRenderer::buildBFSAnimation(const AppState& state) {
         if (!step.empty()) m_animationSteps.push_back(step);
     }
 
+    // underserved hosts (reachable but beyond maxHops) all turn orange at once
+    if (!state.result.underservedHosts.empty()) {
+        std::vector<ColorChange> step;
+        for (int id : state.result.underservedHosts)
+            step.push_back({ id, {}, COL_SEMICRIT, 2.0f });
+        m_animationSteps.push_back(step);
+    }
+
     // unreachable hosts in red
     for (int id : state.result.unreachableHosts)
         m_animationSteps.push_back({{ {id, {}, COL_UNREACHABLE, 2.0f} }});
@@ -156,19 +168,20 @@ void GraphRenderer::buildBridgeAnimation(const AppState& state) {
     m_animationSteps.clear();
     resetColors(state);
 
-    for (const Edge& e : state.result.bridgeResult.dfsOrder)
-        m_animationSteps.push_back({{ {-1, e, COL_DFS_FLASH, 2.0f} }});
+    // critical and semi-critical edges revealed one by one
+    for (const auto& [e, crit] : state.result.edgeCriticality)
+        if (crit == EdgeCriticality::Critical)
+            m_animationSteps.push_back({{ {-1, e, COL_CRITICAL, 3.5f} }});
+    for (const auto& [e, crit] : state.result.edgeCriticality)
+        if (crit == EdgeCriticality::SemiCritical)
+            m_animationSteps.push_back({{ {-1, e, COL_SEMICRIT, 2.5f} }});
 
-    std::vector<ColorChange> finalStep;
-    for (const auto& [e, crit] : state.result.edgeCriticality) {
-        ImU32 color;
-        float thickness;
-        if      (crit == EdgeCriticality::Critical)     { color = COL_CRITICAL;  thickness = 3.5f; }
-        else if (crit == EdgeCriticality::SemiCritical) { color = COL_SEMICRIT;  thickness = 2.5f; }
-        else                                            { color = COL_REDUNDANT; thickness = 2.0f; }
-        finalStep.push_back({ -1, e, color, thickness });
-    }
-    if (!finalStep.empty()) m_animationSteps.push_back(finalStep);
+    // redundant edges all turn green at once
+    std::vector<ColorChange> redundantStep;
+    for (const auto& [e, crit] : state.result.edgeCriticality)
+        if (crit == EdgeCriticality::Redundant)
+            redundantStep.push_back({ -1, e, COL_REDUNDANT, 2.0f });
+    if (!redundantStep.empty()) m_animationSteps.push_back(redundantStep);
 }
 
 bool GraphRenderer::step(AppState& state) {
@@ -180,7 +193,8 @@ bool GraphRenderer::step(AppState& state) {
                 if (n.id == c.nodeId) { n.color = c.color; break; }
         } else {
             for (auto& e : m_edges)
-                if (e.edge.from == c.edge.from && e.edge.to == c.edge.to) {
+                if ((e.edge.from == c.edge.from && e.edge.to == c.edge.to) ||
+                    (e.edge.from == c.edge.to   && e.edge.to == c.edge.from)) {
                     e.color = c.color;
                     e.thickness = c.thickness;
                     break;
@@ -256,7 +270,7 @@ void GraphRenderer::drawNode(ImDrawList* dl, const NodeVisual& nv, const AppStat
 
     // label below icon
     const auto& label = state.graph.getNode(nv.id).label;
-    dl->AddText({p.x - ImGui::CalcTextSize(label.c_str()).x / 2, p.y + 20}, IM_COL32(220, 220, 220, 255), label.c_str());
+    dl->AddText({p.x - ImGui::CalcTextSize(label.c_str()).x / 2, p.y + 20}, IM_COL32( 50,  50,  50, 255), label.c_str());
 }
 
 void GraphRenderer::draw(ImDrawList* dl, ImVec2 origin, ImVec2 canvasSize, const AppState& state) {
