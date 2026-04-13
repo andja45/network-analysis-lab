@@ -3,16 +3,13 @@
 
 #include "Graph.h"
 #include "Analyzer.h"
-#include <unordered_map>
 
 enum class ViewMode { Neutral, BFS, Bridges };
 enum class AnimationState { Idle, Running, Done };
-enum class EdgeConnection { Critical, SemiCritical, Redundant };
 
 struct AppState {
     Graph graph;
     AnalysisResult result;
-    std::unordered_map<Edge, EdgeConnection> edgeConnection;
 
     ViewMode viewMode = ViewMode::Neutral;
     AnimationState animationState = AnimationState::Idle;
