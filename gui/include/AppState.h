@@ -3,6 +3,7 @@
 
 #include "Graph.h"
 #include "Analyzer.h"
+#include <optional>
 
 enum class ViewMode { Neutral, BFS, Bridges };
 enum class AnimationState { Idle, Running, Done };
@@ -19,7 +20,7 @@ struct AppState {
 
     int maxHops = -1;
 
-    NodeType selectedType = NodeType::Provider;
+    std::optional<NodeType> selectedType; // empty = no node tool active
     int pendingEdgeFrom = -1; // when second node is selected, edge is created
     int draggedNode = -1;
 
