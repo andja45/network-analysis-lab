@@ -7,7 +7,7 @@ struct Edge {
     int from;
     int to;
     float latency = 1.0f; // propagation delay in ms
-    float cost = 1.0f; // transfer cost
+    float price = 1.0f; // transfer cost
     float bandwidth = 1000.0f; // link capacity in Mbps
     float load = 0.0f; // current utilization ratio (0.0 = idle, 1.0 = saturated)
     float reliability = 1.0f; // probability link is up (used as -log(r))

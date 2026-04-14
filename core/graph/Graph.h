@@ -15,7 +15,7 @@ private:
     std::vector<Edge> m_edges;
 public:
     int  addNode(const std::string& label, NodeType type);
-    bool addEdge(int u, int v, float latency = 1.0f, float cost = 1.0f,
+    bool addEdge(int u, int v, float latency = 1.0f, float price = 1.0f,
                  float bandwidth = 1000.0f, float load = 0.0f, float reliability = 1.0f);
     const Edge* findEdge(int u, int v) const;
     bool removeEdge(int u, int v);

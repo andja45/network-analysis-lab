@@ -1,18 +1,18 @@
-#include "Analyzer.h"
+#include "ReachabilityAnalyzer.h"
 #include <unordered_set>
 
-AnalysisResult analyze(const Graph& graph, int maxHops) {
-    AnalysisResult result;
+ReachabilityResult analyze(const Graph& graph, int maxHops) {
+    ReachabilityResult result;
 
-    result.bfs = runBFS(graph);
+    result.bfsResult = runBFS(graph);
 
     for (int hostId : graph.getNodesByType(NodeType::Host)) {
         result.totalHosts++;
-        if (result.bfs.distance[hostId] == -1) {
+        if (result.bfsResult.distance[hostId] == -1) {
             result.unreachableHosts.push_back(hostId);
         } else {
             result.reachableHosts++;
-            if (maxHops != -1 && result.bfs.distance[hostId] > maxHops)
+            if (maxHops != -1 && result.bfsResult.distance[hostId] > maxHops)
                 result.underservedHosts.push_back(hostId);
         }
     }
@@ -29,7 +29,7 @@ AnalysisResult analyze(const Graph& graph, int maxHops) {
         BFSResult impactBFS = runBFS(copy);
 
         for (int hostId : graph.getNodesByType(NodeType::Host)) {
-            bool wasReachable   = result.bfs.distance[hostId] != -1;
+            bool wasReachable   = result.bfsResult.distance[hostId] != -1;
             bool nowUnreachable = impactBFS.distance[hostId] == -1;
             if (wasReachable && nowUnreachable)
                 impact.disconnectedHosts.push_back(hostId);
@@ -45,24 +45,24 @@ AnalysisResult analyze(const Graph& graph, int maxHops) {
 
     for (const Edge& e : graph.edges()) {
         if (criticalBridges.count(e)) {
-            result.edgeCriticality[e] = EdgeCriticality::Critical;
+            result.connectionCriticality[e] = ConnectionCriticality::Critical;
             continue;
         }
 
         // simulate removing e from the original graph
-        Graph copy = graph;
-        copy.removeEdge(e.from, e.to);
+        Graph modified = graph;
+        modified.removeEdge(e.from, e.to);
 
         bool newCriticalFound = false;
-        for (const Edge& bridge : findBridges(copy).bridges) {
+        for (const Edge& bridge : findBridges(modified).bridges) {
             if (criticalBridges.count(bridge)) continue; // removing an edge keeps or increases the number of critical bridges
 
-            Graph copy2 = copy;
-            copy2.removeEdge(bridge.from, bridge.to);
-            BFSResult impactBFS = runBFS(copy2);
+            Graph modified2 = modified;
+            modified2.removeEdge(bridge.from, bridge.to);
+            BFSResult impactBFS = runBFS(modified2);
 
             for (int hostId : graph.getNodesByType(NodeType::Host)) {
-                bool wasReachable   = result.bfs.distance[hostId] != -1;
+                bool wasReachable   = result.bfsResult.distance[hostId] != -1;
                 bool nowUnreachable = impactBFS.distance[hostId] == -1;
                 if (wasReachable && nowUnreachable) {
                     newCriticalFound = true;
@@ -72,9 +72,9 @@ AnalysisResult analyze(const Graph& graph, int maxHops) {
             if (newCriticalFound) break; // if it increases the number of critical bridges by even 1, we have a semi-critical connection
         }
 
-        result.edgeCriticality[e] = newCriticalFound
-            ? EdgeCriticality::SemiCritical
-            : EdgeCriticality::Redundant;
+        result.connectionCriticality[e] = newCriticalFound
+            ? ConnectionCriticality::SemiCritical
+            : ConnectionCriticality::Redundant;
     }
 
     return result;
