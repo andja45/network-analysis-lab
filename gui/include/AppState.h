@@ -1,8 +1,8 @@
 #ifndef NETWORKREACHABILITYANALYSIS_APPSTATE_H
 #define NETWORKREACHABILITYANALYSIS_APPSTATE_H
 
-#include "Graph.h"
-#include "Analyzer.h"
+#include "graph/Graph.h"
+#include "reachability/Analyzer.h"
 #include <optional>
 
 enum class ViewMode { Neutral, BFS, Bridges };

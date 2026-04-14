@@ -1,5 +1,5 @@
-#include "GraphExamples.h"
-#include "Analyzer.h"
+#include "examples/GraphExamples.h"
+#include "reachability/Analyzer.h"
 #include <iostream>
 
 static std::string label(const Graph& g, int id) {

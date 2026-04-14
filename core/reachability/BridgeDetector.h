@@ -2,8 +2,8 @@
 #define NETWORKREACHABILITYANALYSIS_BRIDGEDETECTOR_H
 
 #include <vector>
-#include "Graph.h"
-#include "Edge.h"
+#include "graph/Graph.h"
+#include "graph/Edge.h"
 
 struct BridgeResult {
     std::vector<Edge> bridges;

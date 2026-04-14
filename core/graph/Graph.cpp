@@ -1,4 +1,4 @@
-#include "../include/Graph.h"
+#include "Graph.h"
 #include <algorithm>
 
 int Graph::addNode(const std::string& label, NodeType type) {

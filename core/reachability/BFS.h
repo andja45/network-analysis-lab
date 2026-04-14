@@ -2,7 +2,7 @@
 #define NETWORKREACHABILITYANALYSIS_BFS_H
 
 #include <unordered_map>
-#include "Graph.h"
+#include "graph/Graph.h"
 
 struct BFSResult {
     std::unordered_map<int, int> distance;       // hops to the nearest provider
