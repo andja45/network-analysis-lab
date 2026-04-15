@@ -44,6 +44,11 @@ void GraphRenderer::addEdge(const Edge& e) {
     m_edges.push_back({e, COL_EDGE_DEFAULT, 2.0f});
 }
 
+void GraphRenderer::setNodePosition(int id, ImVec2 pos) {
+    for (auto& n : m_nodes)
+        if (n.id == id) { n.pos = pos; return; }
+}
+
 void GraphRenderer::removeNode(int id) {
     auto rm = [id](const NodeVisual& n) { return n.id == id; };
     m_nodes.erase(std::remove_if(m_nodes.begin(), m_nodes.end(), rm), m_nodes.end());

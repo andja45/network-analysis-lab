@@ -1,5 +1,21 @@
 #include "App.h"
 #include "examples/GraphExamples.h"
+
+static const ImVec2 LAYOUT_CROSSROADS[] = {
+    {430, 80}, {430, 200}, {210, 340}, {430, 340},
+    {650, 340}, {430, 480}, {590, 480},
+};
+static const ImVec2 LAYOUT_CITY_RING[] = {
+    {60, 280}, {740, 280}, {230, 280}, {315, 133},
+    {485, 133}, {570, 280}, {485, 427}, {315, 427},
+    {450, 540}, {560, 540}, {485, 50},
+};
+static const ImVec2 LAYOUT_DUAL_ISP[] = {
+    {30, 280}, {790, 260}, {120, 200}, {240, 200},
+    {240, 360}, {120, 360}, {550, 260}, {690, 190},
+    {690, 340}, {100, 460}, {260, 460}, {690, 440},
+    {80, 550}, {260, 550}, {650, 550}, {740, 550}, {430, 550},
+};
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 #include <GLFW/glfw3.h>
@@ -25,7 +41,7 @@ App::App() {
     ImGui_ImplGlfw_InitForOpenGL(m_window, true);
     ImGui_ImplOpenGL3_Init("#version 130");
 
-    loadExample(makeOfficeNetwork());
+    loadExample(makeCrossroads());
 }
 
 App::~App() {
@@ -108,10 +124,10 @@ void App::leftPanel() {
     ImGui::SliderFloat("Speed", &m_state.stepDelay, 0.05f,1.0f, "%.2f s");
     ImGui::Separator();
 
-    ImGui::Text("Example Networks");
-    if (ImGui::Button("Office",{-1, 0})) loadExample(makeOfficeNetwork());
-    if (ImGui::Button("Redundant",{-1, 0})) loadExample(makeRedundantNetwork());
-    if (ImGui::Button("Linear",{-1, 0})) loadExample(makeLinearNetwork());
+    ImGui::Text("Examples");
+    if (ImGui::Button("Crossroads",   {-1, 0})) loadExample(makeCrossroads(),  LAYOUT_CROSSROADS,    7);
+    if (ImGui::Button("City Ring",    {-1, 0})) loadExample(makeCityRing(),     LAYOUT_CITY_RING,    11);
+    if (ImGui::Button("Dual ISP", {-1, 0})) loadExample(makeDualISP(), LAYOUT_DUAL_ISP, 17);
     ImGui::Separator();
 
     if (ImGui::Button("Clear", {-1, 0})) {
@@ -232,10 +248,14 @@ void App::rightPanel() {
     }
 }
 
-void App::loadExample(const Graph& g) {
+void App::loadExample(const Graph& g, const ImVec2* positions, int count) {
     m_state = AppState{};
     m_state.graph = g;
     m_state.runAnalysis();
     if (m_canvasSize.x < 1) m_canvasSize = {860, 680};
     m_renderer.reset(m_state, m_canvasSize);
+    float sx = m_canvasSize.x / 860.0f;
+    float sy = m_canvasSize.y / 680.0f;
+    for (int i = 0; i < count; ++i)
+        m_renderer.setNodePosition(i, {positions[i].x * sx, positions[i].y * sy});
 }

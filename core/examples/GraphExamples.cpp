@@ -59,7 +59,7 @@ Graph makeCityRing() {
 }
 
 // Two ISP rings linked by two cross-connections — fast+expensive vs slow+cheap. H5 is unreachable.
-Graph makeISPBackbone() {
+Graph makeDualISP() {
     Graph g;
 
     int p1  = g.addNode("P1",  NodeType::Provider);

@@ -49,6 +49,7 @@ public:
     void removeNode(int id);
     void removeEdge(const Edge& e);
     void moveNode(int id, ImVec2 delta);
+    void setNodePosition(int id, ImVec2 pos);
 
     int    nodeAt(ImVec2 p) const;
     Edge   edgeAt(ImVec2 p) const;

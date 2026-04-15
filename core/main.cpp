@@ -6,7 +6,7 @@
 #include <iomanip>
 #include <limits>
 
-static std::string lbl(const Graph& g, int id) {
+static std::string label(const Graph& g, int id) {
     return g.getNode(id).label;
 }
 
@@ -14,7 +14,7 @@ static void printEdgeList(const Graph& g, const std::vector<Edge>& edges) {
     std::cout << "[";
     for (size_t i = 0; i < edges.size(); i++) {
         if (i) std::cout << ", ";
-        std::cout << lbl(g, edges[i].from) << "--" << lbl(g, edges[i].to);
+        std::cout << label(g, edges[i].from) << "--" << label(g, edges[i].to);
     }
     std::cout << "]";
 }
@@ -40,7 +40,7 @@ static void printReachability(const Graph& graph, int maxHops) {
         std::cout << "  [";
         for (size_t i = 0; i < r.unreachableHosts.size(); i++) {
             if (i) std::cout << ", ";
-            std::cout << lbl(graph, r.unreachableHosts[i]);
+            std::cout << label(graph, r.unreachableHosts[i]);
         }
         std::cout << "]";
     }
@@ -52,7 +52,7 @@ static void printReachability(const Graph& graph, int maxHops) {
             std::cout << "  [";
             for (size_t i = 0; i < r.underservedHosts.size(); i++) {
                 if (i) std::cout << ", ";
-                std::cout << lbl(graph, r.underservedHosts[i]);
+                std::cout << label(graph, r.underservedHosts[i]);
             }
             std::cout << "]";
         }
@@ -92,7 +92,7 @@ static Metric presetMetric(int i) {
 }
 
 static void printRouting(const Graph& graph, int src, int dst) {
-    std::cout << "\n  Routing  " << lbl(graph, src) << " -> " << lbl(graph, dst) << "\n";
+    std::cout << "\n  Routing  " << label(graph, src) << " -> " << label(graph, dst) << "\n";
 
     Heuristic zero = [](int, int) { return 0.0f; };
 
@@ -109,7 +109,7 @@ static void printRouting(const Graph& graph, int src, int dst) {
         std::cout << "  cost=" << std::fixed << std::setprecision(2) << dij.totalCost << "  path: ";
         for (size_t j = 0; j < dij.path.size(); j++) {
             if (j) std::cout << "->";
-            std::cout << lbl(graph, dij.path[j]);
+            std::cout << label(graph, dij.path[j]);
         }
         std::cout << "  [D: relax=" << dij.relaxations << " vis=" << dij.visited
                   << "  A*: relax=" << ast.relaxations << " vis=" << ast.visited << "]\n";
@@ -136,7 +136,7 @@ static void printRouting(const Graph& graph, int src, int dst) {
             case DetourCriticality::SemiCritical: cls = "semi";      break;
             default:                              cls = "redundant"; break;
         }
-        std::cout << "    " << lbl(graph, e.from) << "--" << lbl(graph, e.to);
+        std::cout << "    " << label(graph, e.from) << "--" << label(graph, e.to);
         if (ratio == std::numeric_limits<float>::infinity())
             std::cout << "  DCI=inf   " << cls << "\n";
         else
@@ -153,6 +153,6 @@ static void report(const std::string& name, const Graph& graph, int src, int dst
 int main() {
     report("Crossroads",   makeCrossroads(),   0, 5,  3); // P1(0) -> H1(5)
     report("City Ring",    makeCityRing(),     0, 8,  3); // P1(0) -> H1(8)
-    report("ISP Backbone", makeISPBackbone(),  0, 14, 4); // P1(0) -> H3(14)
+    report("Dual ISP", makeDualISP(),  0, 14, 4); // P1(0) -> H3(14)
     std::cout << "\n";
 }

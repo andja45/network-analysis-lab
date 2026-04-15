@@ -16,7 +16,7 @@ private:
     void leftPanel();
     void canvas();
     void rightPanel();
-    void loadExample(const Graph& g);
+    void loadExample(const Graph& g, const ImVec2* positions = nullptr, int count = 0);
 public:
     App();
     ~App();

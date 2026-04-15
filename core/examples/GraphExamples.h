@@ -5,6 +5,6 @@
 
 Graph makeCrossroads();
 Graph makeCityRing();
-Graph makeISPBackbone();
+Graph makeDualISP();
 
 #endif //NETWORKANALYSISLAB_GRAPHEXAMPLES_H
