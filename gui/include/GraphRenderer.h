@@ -32,18 +32,18 @@ private:
     std::unordered_map<int, ImU32> m_providerColors;
     std::vector<std::vector<ColorChange>> m_animationSteps;
 
-    void computeLayout(const AppState& state, ImVec2 canvasSize);
     void rebuildProviderColors(const Graph& graph);
     void resetColors();
     void applyStep(int stepIdx);
     void drawNode(ImDrawList* dl, const NodeVisual& nv, const AppState& state) const;
-    void drawEdge(ImDrawList* dl, const EdgeVisual& ev) const;
+    void drawEdge(ImDrawList* dl, const EdgeVisual& ev, MetricChoice metric, bool showLabel) const;
 public:
-    void reset(const AppState& state, ImVec2 canvasSize);
-    void draw(ImDrawList* drawList, ImVec2 canvasOrigin, ImVec2 canvasSize, const AppState& state);
+    void reset(const AppState& state);
+    void draw(ImDrawList* drawList, ImVec2 canvasOrigin, ImVec2 canvasSize, const AppState& state, MetricChoice metric, bool showEdgeLabels);
     void buildBFSAnimation(const AppState& state);
     void buildBridgeAnimation(const AppState& state);
     void buildRoutingAnimation(const AppState& state, const RoutingCanvasState& canvas);
+    void buildDCIAnimation(const RoutingCanvasState& canvas);
     bool step(int& stepCounter);
     void advancePacket(RoutingCanvasState& canvas, float dt, float speed);
     void drawPacket(ImDrawList* dl, ImVec2 origin, const RoutingCanvasState& canvas);

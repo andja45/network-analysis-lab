@@ -6,32 +6,35 @@ void AppState::runAnalysis() {
 
 static Metric toMetric(MetricChoice p) {
     switch (p) {
-        case MetricChoice::Fastest: return costFastest();
-        case MetricChoice::Cheapest: return costCheapest();
+        case MetricChoice::Fastest:     return costFastest();
+        case MetricChoice::Cheapest:    return costCheapest();
         case MetricChoice::LeastLoaded: return costLeastLoaded();
-        case MetricChoice::MostReliable: return costMostReliable();
-        default: return costBalanced();
+        case MetricChoice::MostReliable:return costMostReliable();
+        default:                        return costBalanced();
     }
 }
 
 void AppState::runRouting(Heuristic h) {
-    topCanvas.result = ::runRouting(graph, routingSrc, routingDst, toMetric(topCanvas.metric), h);
-    bottomCanvas.result = ::runRouting(graph, routingSrc, routingDst, toMetric(bottomCanvas.metric), h);
-    topCanvas.animationState = AnimationState::Running;
-    topCanvas.animationStep = 0;
-    topCanvas.packetPhase = false;
-    topCanvas.packetT = 0.0f;
-    topCanvas.packetEdgeIdx = 0;
-    bottomCanvas.animationState = AnimationState::Running;
-    bottomCanvas.animationStep = 0;
-    bottomCanvas.packetPhase = false;
-    bottomCanvas.packetT = 0.0f;
-    bottomCanvas.packetEdgeIdx = 0;
+    auto run = [&](RoutingCanvasState& c) {
+        c.result = ::runRouting(graph, routingSrc, routingDst, toMetric(c.metric), h);
+        c.animationState = AnimationState::Running;
+        c.animationStep = 0;
+        c.packetPhase = false;
+        c.packetT = 0.0f;
+        c.packetEdgeIdx = 0;
+        c.dciResult = {};
+    };
+    run(topCanvas);
+    run(bottomCanvas);
     viewMode = ViewMode::Routing;
 }
 
 void AppState::runResilience() {
-    topCanvas.dciResult = computeDCI(graph, routingSrc, routingDst, toMetric(topCanvas.metric), 2.0f);
-    bottomCanvas.dciResult = computeDCI(graph, routingSrc, routingDst, toMetric(bottomCanvas.metric), 2.0f);
+    auto run = [&](RoutingCanvasState& c) {
+        c.dciResult = computeDCI(graph, routingSrc, routingDst, toMetric(c.metric), 2.0f);
+        c.animationState = AnimationState::Running;
+        c.animationStep = 0;
+    };
+    run(topCanvas); run(bottomCanvas);
     viewMode = ViewMode::DCI;
 }

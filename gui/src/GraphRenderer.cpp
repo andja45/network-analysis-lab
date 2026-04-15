@@ -1,6 +1,5 @@
 #include "GraphRenderer.h"
 #include "AppTheme.h"
-#include <unordered_set>
 #include <algorithm>
 #include <cmath>
 
@@ -18,11 +17,8 @@ static ImVec2 nodePos(const std::vector<NodeVisual>& nodes, int id) {
     return {0, 0};
 }
 
-static const std::vector<int>& activePath(const RoutingCanvasState& c) {
-    return c.algo == AlgoChoice::Dijkstra ? c.result.dijkstra.path : c.result.astar.path;
-}
-static const std::vector<int>& activeVisitOrder(const RoutingCanvasState& c) {
-    return c.algo == AlgoChoice::Dijkstra ? c.result.dijkstra.visitOrder : c.result.astar.visitOrder;
+static const PathResult& activeResult(const RoutingCanvasState& c) {
+    return c.algo == AlgoChoice::Dijkstra ? c.result.dijkstra : c.result.astar;
 }
 static ImU32 pathColor(const RoutingCanvasState& c) {
     return c.algo == AlgoChoice::Dijkstra ? AppTheme::PATH_DIJKSTRA : AppTheme::PATH_ASTAR;
@@ -45,10 +41,8 @@ void GraphRenderer::setNodePosition(int id, ImVec2 pos) {
 }
 
 void GraphRenderer::removeNode(int id) {
-    auto rmNode = [id](const NodeVisual& n) { return n.id == id; };
-    m_nodes.erase(std::remove_if(m_nodes.begin(), m_nodes.end(), rmNode), m_nodes.end());
-    auto rmEdge = [id](const EdgeVisual& e) { return e.edge.from == id || e.edge.to == id; };
-    m_edges.erase(std::remove_if(m_edges.begin(), m_edges.end(), rmEdge), m_edges.end());
+    m_nodes.erase(std::remove_if(m_nodes.begin(), m_nodes.end(), [id](const NodeVisual& n){ return n.id == id; }), m_nodes.end());
+    m_edges.erase(std::remove_if(m_edges.begin(), m_edges.end(), [id](const EdgeVisual& e){ return e.edge.from == id || e.edge.to == id; }), m_edges.end());
 }
 
 void GraphRenderer::removeEdge(const Edge& e) {
@@ -64,39 +58,10 @@ void GraphRenderer::rebuildProviderColors(const Graph& graph) {
             m_providerColors[id] = AppTheme::PROVIDER_PALETTE[idx++ % AppTheme::PALETTE_SIZE];
 }
 
-void GraphRenderer::reset(const AppState& state, ImVec2 canvasSize) {
-    m_nodes.clear();
-    m_edges.clear();
-    m_animationSteps.clear();
-    m_providerColors.clear();
-    computeLayout(state, canvasSize);
-}
-
-void GraphRenderer::computeLayout(const AppState& state, ImVec2 canvasSize) {
+void GraphRenderer::reset(const AppState& state) {
+    m_nodes.clear(); m_edges.clear(); m_animationSteps.clear(); m_providerColors.clear();
     rebuildProviderColors(state.graph);
-
-    const auto& levels = state.result.bfsResult.bfsLevels;
-
-    std::unordered_set<int> placed;
-    for (const auto& level : levels)
-        for (int id : level) placed.insert(id);
-
-    std::vector<int> unreachable;
-    for (const auto& [id, node] : state.graph.nodes())
-        if (!placed.count(id)) unreachable.push_back(id);
-
-    auto placeRow = [&](const std::vector<int>& ids, float y) {
-        float colW = canvasSize.x / (float)(ids.size() + 1);
-        float x = colW;
-        for (int id : ids) { addNode(id, {x, y}); x += colW; }
-    };
-
-    int rows = (int)levels.size() + (unreachable.empty() ? 0 : 1);
-    float rowH = canvasSize.y / (float)(rows + 1);
-    float y = rowH;
-    for (const auto& level : levels) { placeRow(level, y); y += rowH; }
-    if (!unreachable.empty()) placeRow(unreachable, y);
-
+    for (const auto& [id, _] : state.graph.nodes()) addNode(id, {0, 0});
     for (const Edge& e : state.graph.edges()) addEdge(e);
 }
 
@@ -111,8 +76,7 @@ void GraphRenderer::clear() {
 }
 
 void GraphRenderer::buildBFSAnimation(const AppState& state) {
-    m_animationSteps.clear();
-    resetColors();
+    clear();
     rebuildProviderColors(state.graph);
 
     const auto& bfs = state.result.bfsResult;
@@ -150,21 +114,16 @@ void GraphRenderer::buildBFSAnimation(const AppState& state) {
 }
 
 void GraphRenderer::buildBridgeAnimation(const AppState& state) {
-    m_animationSteps.clear();
-    resetColors();
-
+    clear();
+    auto push1 = [&](const Edge& e, ImU32 c, float t){ m_animationSteps.push_back({{ {-1, e, c, t} }}); };
     for (const auto& [e, crit] : state.result.connectionCriticality)
-        if (crit == ConnectionCriticality::Critical)
-            m_animationSteps.push_back({{ {-1, e, AppTheme::CRITICAL, 3.5f} }});
+        if (crit == ConnectionCriticality::Critical) push1(e, AppTheme::CRITICAL, 3.5f);
     for (const auto& [e, crit] : state.result.connectionCriticality)
-        if (crit == ConnectionCriticality::SemiCritical)
-            m_animationSteps.push_back({{ {-1, e, AppTheme::SEMICRIT, 2.5f} }});
-
-    std::vector<ColorChange> redundantStep;
+        if (crit == ConnectionCriticality::SemiCritical) push1(e, AppTheme::SEMICRIT, 2.5f);
+    std::vector<ColorChange> red;
     for (const auto& [e, crit] : state.result.connectionCriticality)
-        if (crit == ConnectionCriticality::Redundant)
-            redundantStep.push_back({ -1, e, AppTheme::REDUNDANT, 2.0f });
-    if (!redundantStep.empty()) m_animationSteps.push_back(redundantStep);
+        if (crit == ConnectionCriticality::Redundant) red.push_back({-1, e, AppTheme::REDUNDANT, 2.0f});
+    if (!red.empty()) m_animationSteps.push_back(red);
 }
 
 void GraphRenderer::applyStep(int stepIdx) {
@@ -214,10 +173,32 @@ Edge GraphRenderer::edgeAt(ImVec2 p) const {
     return {-1, -1};
 }
 
-void GraphRenderer::drawEdge(ImDrawList* dl, const EdgeVisual& ev) const {
+void GraphRenderer::drawEdge(ImDrawList* dl, const EdgeVisual& ev, MetricChoice metric, bool showLabel) const {
     ImVec2 a = nodePos(m_nodes, ev.edge.from);
     ImVec2 b = nodePos(m_nodes, ev.edge.to);
     dl->AddLine(a, b, ev.color, ev.thickness);
+    if (!showLabel) return;
+    ImVec2 mid = {(a.x + b.x) / 2.0f, (a.y + b.y) / 2.0f};
+    float dx = b.x - a.x, dy = b.y - a.y;
+    float len = hypotf(dx, dy);
+    float ox = (len > 0) ? -dy / len * 10.0f : 0.0f;
+    float oy = (len > 0) ? dx / len * 10.0f : 0.0f;
+    char buf[16];
+    const Edge& e = ev.edge;
+    switch (metric) {
+        case MetricChoice::Fastest: std::snprintf(buf, 16, "%.0fms", e.latency); break;
+        case MetricChoice::Cheapest: std::snprintf(buf, 16, "$%.1f", e.price); break;
+        case MetricChoice::LeastLoaded: std::snprintf(buf, 16, "%.2f", e.load); break;
+        case MetricChoice::MostReliable: std::snprintf(buf, 16, "%.2f", e.reliability); break;
+        default: {
+            float score = 0.4f * e.latency + 0.4f * e.price
+                        + 0.2f * (-std::log(std::max(e.reliability, 1e-6f)));
+            std::snprintf(buf, 16, "%.2f", score);
+            break;
+        }
+    }
+    ImVec2 ts = ImGui::CalcTextSize(buf);
+    dl->AddText({mid.x + ox - ts.x / 2.0f, mid.y + oy - ts.y / 2.0f}, AppTheme::LABEL, buf);
 }
 
 void GraphRenderer::drawNode(ImDrawList* dl, const NodeVisual& nv, const AppState& state) const {
@@ -248,21 +229,36 @@ void GraphRenderer::drawNode(ImDrawList* dl, const NodeVisual& nv, const AppStat
     dl->AddText({p.x - ImGui::CalcTextSize(label.c_str()).x / 2, p.y + 20}, AppTheme::LABEL, label.c_str());
 }
 
-void GraphRenderer::draw(ImDrawList* dl, ImVec2 origin, ImVec2 canvasSize, const AppState& state) {
+void GraphRenderer::draw(ImDrawList* dl, ImVec2 origin, ImVec2 canvasSize,
+                          const AppState& state, MetricChoice metric, bool showEdgeLabels) {
     for (auto& n : m_nodes) n.pos = {n.pos.x + origin.x, n.pos.y + origin.y};
-    for (const auto& e : m_edges) drawEdge(dl, e);
+    for (const auto& e : m_edges) drawEdge(dl, e, metric, showEdgeLabels);
     for (const auto& n : m_nodes) drawNode(dl, n, state);
     for (auto& n : m_nodes) n.pos = {n.pos.x - origin.x, n.pos.y - origin.y};
 }
 
-void GraphRenderer::buildRoutingAnimation(const AppState& state, const RoutingCanvasState& canvas) {
-    m_animationSteps.clear();
-    resetColors();
+void GraphRenderer::buildDCIAnimation(const RoutingCanvasState& canvas) {
+    clear();
+    auto push1 = [&](const Edge& e, ImU32 c, float t){ m_animationSteps.push_back({{ {-1, e, c, t} }}); };
+    for (const auto& [e, dc] : canvas.dciResult.detourCriticality)
+        if (dc == DetourCriticality::Bridge) push1(e, AppTheme::CRITICAL, 3.5f);
+    for (const auto& [e, dc] : canvas.dciResult.detourCriticality)
+        if (dc == DetourCriticality::Critical) push1(e, AppTheme::SEMICRIT, 3.0f);
+    std::vector<ColorChange> rest;
+    for (const auto& [e, dc] : canvas.dciResult.detourCriticality) {
+        if (dc == DetourCriticality::SemiCritical) rest.push_back({-1, e, AppTheme::SEMICRIT, 2.5f});
+        else if (dc == DetourCriticality::Redundant) rest.push_back({-1, e, AppTheme::REDUNDANT, 2.0f});
+    }
+    if (!rest.empty()) m_animationSteps.push_back(rest);
+}
 
-    for (int id : activeVisitOrder(canvas))
+void GraphRenderer::buildRoutingAnimation(const AppState& state, const RoutingCanvasState& canvas) {
+    clear();
+
+    for (int id : activeResult(canvas).visitOrder)
         m_animationSteps.push_back({{ {id, {}, visitColor(canvas), 2.0f} }});
 
-    const auto& path = activePath(canvas);
+    const auto& path = activeResult(canvas).path;
     std::vector<ColorChange> pathStep;
     for (int i = 0; i + 1 < (int)path.size(); ++i)
         pathStep.push_back({ -1, {path[i], path[i+1]}, pathColor(canvas), 3.5f });
@@ -273,23 +269,16 @@ void GraphRenderer::buildRoutingAnimation(const AppState& state, const RoutingCa
 }
 
 void GraphRenderer::advancePacket(RoutingCanvasState& canvas, float dt, float speed) {
-    const auto& path = activePath(canvas);
+    const auto& path = activeResult(canvas).path;
     if (canvas.packetEdgeIdx >= (int)path.size() - 1) return;
-    canvas.packetT += dt * speed;
-    if (canvas.packetT >= 1.0f) {
-        canvas.packetT = 0.0f;
-        ++canvas.packetEdgeIdx;
-    }
+    if ((canvas.packetT += dt * speed) >= 1.0f) { canvas.packetT = 0.0f; ++canvas.packetEdgeIdx; }
 }
 
 void GraphRenderer::drawPacket(ImDrawList* dl, ImVec2 origin, const RoutingCanvasState& canvas) {
-    const auto& path = activePath(canvas);
+    const auto& path = activeResult(canvas).path;
     if (canvas.packetEdgeIdx >= (int)path.size() - 1) return;
     ImVec2 a = nodePosition(path[canvas.packetEdgeIdx]);
     ImVec2 b = nodePosition(path[canvas.packetEdgeIdx + 1]);
-    ImVec2 pos = {
-        origin.x + a.x + (b.x - a.x) * canvas.packetT,
-        origin.y + a.y + (b.y - a.y) * canvas.packetT,
-    };
-    dl->AddCircleFilled(pos, 8.0f, pathColor(canvas));
+    float t = canvas.packetT;
+    dl->AddCircleFilled({origin.x + a.x + (b.x-a.x)*t, origin.y + a.y + (b.y-a.y)*t}, 8.0f, pathColor(canvas));
 }
