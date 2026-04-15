@@ -3,8 +3,8 @@
 
 #include "graph/Graph.h"
 
-Graph makeOfficeNetwork();
-Graph makeRedundantNetwork();
-Graph makeLinearNetwork();
+Graph makeCrossroads();
+Graph makeCityRing();
+Graph makeISPBackbone();
 
-#endif
+#endif //NETWORKANALYSISLAB_GRAPHEXAMPLES_H

@@ -71,7 +71,7 @@ void GraphRenderer::computeLayout(const AppState& state, ImVec2 canvasSize) {
         if (node.type == NodeType::Provider)
             m_providerColors[id] = PROVIDER_PALETTE[colorIdx++ % PALETTE_SIZE];
 
-    const auto& levels = state.result.bfs.bfsLevels;
+    const auto& levels = state.result.bfsResult.bfsLevels;
 
     // nodes not in any BFS level are unreachable — place them in a bottom row
     std::unordered_set<int> placed;
@@ -125,7 +125,7 @@ void GraphRenderer::buildBFSAnimation(const AppState& state) {
         if (node.type == NodeType::Provider)
             m_providerColors[id] = PROVIDER_PALETTE[colorIdx++ % PALETTE_SIZE];
 
-    const auto& bfs = state.result.bfs;
+    const auto& bfs = state.result.bfsResult;
 
     // level 0: light up each provider in its color
     if (!bfs.bfsLevels.empty())
@@ -169,17 +169,17 @@ void GraphRenderer::buildBridgeAnimation(const AppState& state) {
     resetColors(state);
 
     // critical and semi-critical edges revealed one by one
-    for (const auto& [e, crit] : state.result.edgeCriticality)
-        if (crit == EdgeCriticality::Critical)
+    for (const auto& [e, crit] : state.result.connectionCriticality)
+        if (crit == ConnectionCriticality::Critical)
             m_animationSteps.push_back({{ {-1, e, COL_CRITICAL, 3.5f} }});
-    for (const auto& [e, crit] : state.result.edgeCriticality)
-        if (crit == EdgeCriticality::SemiCritical)
+    for (const auto& [e, crit] : state.result.connectionCriticality)
+        if (crit == ConnectionCriticality::SemiCritical)
             m_animationSteps.push_back({{ {-1, e, COL_SEMICRIT, 2.5f} }});
 
     // redundant edges all turn green at once
     std::vector<ColorChange> redundantStep;
-    for (const auto& [e, crit] : state.result.edgeCriticality)
-        if (crit == EdgeCriticality::Redundant)
+    for (const auto& [e, crit] : state.result.connectionCriticality)
+        if (crit == ConnectionCriticality::Redundant)
             redundantStep.push_back({ -1, e, COL_REDUNDANT, 2.0f });
     if (!redundantStep.empty()) m_animationSteps.push_back(redundantStep);
 }

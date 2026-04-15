@@ -2,7 +2,7 @@
 #define NETWORKANALYSISLAB_APPSTATE_H
 
 #include "graph/Graph.h"
-#include "reachability/Analyzer.h"
+#include "reachability/ReachabilityAnalyzer.h"
 #include <optional>
 
 enum class ViewMode { Neutral, BFS, Bridges };
@@ -10,7 +10,7 @@ enum class AnimationState { Idle, Running, Done };
 
 struct AppState {
     Graph graph;
-    AnalysisResult result;
+    ReachabilityResult result;
 
     ViewMode viewMode = ViewMode::Neutral;
     AnimationState animationState = AnimationState::Idle;

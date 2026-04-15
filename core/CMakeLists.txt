@@ -8,8 +8,11 @@ target_sources(core PRIVATE
     graph/Graph.cpp
     reachability/BFS.cpp
     reachability/BridgeDetector.cpp
-    reachability/Analyzer.cpp
+    reachability/ReachabilityAnalyzer.cpp
     examples/GraphExamples.cpp
+    routing/Dijkstra.cpp
+    routing/AStar.cpp
+    routing/RoutingAnalyzer.cpp
 )
 
 add_executable(core_demo main.cpp)

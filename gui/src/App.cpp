@@ -144,7 +144,7 @@ void App::canvas() {
             if (e.from != -1) { m_state.graph.removeEdge(e.from, e.to); m_renderer.removeEdge(e); changed = true; }
         }
         if (changed) {
-            m_state.result = AnalysisResult{};
+            m_state.result = ReachabilityResult{};
             m_state.viewMode = ViewMode::Neutral;
             m_state.animationState = AnimationState::Idle;
             m_renderer.clear(m_state);
@@ -211,9 +211,9 @@ void App::rightPanel() {
 
     // count edges by criticality
     int nCrit = 0, nSemi = 0, nRedund = 0;
-    for (const auto& [e, c] : r.edgeCriticality) {
-        if (c == EdgeCriticality::Critical) ++nCrit;
-        else if (c == EdgeCriticality::SemiCritical) ++nSemi;
+    for (const auto& [e, c] : r.connectionCriticality) {
+        if (c == ConnectionCriticality::Critical) ++nCrit;
+        else if (c == ConnectionCriticality::SemiCritical) ++nSemi;
         else ++nRedund;
     }
 
@@ -225,8 +225,8 @@ void App::rightPanel() {
 
     // list only critical and semi-critical connections
     for (const Edge& b : r.bridgeResult.bridges) {
-        auto crit = r.edgeCriticality.at(b);
-        bool isCrit = (crit == EdgeCriticality::Critical);
+        auto crit = r.connectionCriticality.at(b);
+        bool isCrit = (crit == ConnectionCriticality::Critical);
         ImGui::TextColored(isCrit ? RED : ORANGE, "  %s--%s [%s]",
             label(b.from), label(b.to), isCrit ? "CRIT" : "SEMI");
     }
