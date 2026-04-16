@@ -115,8 +115,6 @@ Each path edge is classified against a configurable DCI ratio threshold (default
 
 DCI requires a successful routing result and is computed independently for each canvas.
 
-![DCI.png](assets/DCI.png)
-
 ---
 
 ## Build
