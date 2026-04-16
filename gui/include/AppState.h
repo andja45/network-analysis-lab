@@ -69,7 +69,7 @@ struct AppState {
     RoutingCanvasState bottomCanvas;
 
     void runAnalysis();
-    void runRouting(Heuristic h);
+    void runRouting(Heuristic hTop, Heuristic hBot);
     void runResilience();
 };
 

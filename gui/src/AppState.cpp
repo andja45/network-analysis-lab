@@ -4,8 +4,8 @@ void AppState::runAnalysis() {
     result = analyze(graph, maxHops);
 }
 
-void AppState::runRouting(Heuristic h) {
-    auto run = [&](RoutingCanvasState& c) {
+void AppState::runRouting(Heuristic hTop, Heuristic hBot) {
+    auto run = [&](RoutingCanvasState& c, Heuristic h) {
         c.result = ::runRouting(graph, routingSrc, routingDst, toMetric(c.metric), h);
         c.animationState = AnimationState::Running;
         c.animationStep = 0;
@@ -14,8 +14,8 @@ void AppState::runRouting(Heuristic h) {
         c.packetEdgeIdx = 0;
         c.dciResult = {};
     };
-    run(topCanvas);
-    run(bottomCanvas);
+    run(topCanvas, hTop);
+    run(bottomCanvas, hBot);
     viewMode = ViewMode::Routing;
 }
 

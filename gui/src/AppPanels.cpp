@@ -115,10 +115,9 @@ void App::leftPanel() {
                 NodePositions pos;
                 for (const auto& [id, _] : m_state.graph.nodes())
                     pos[id] = {m_top.nodePosition(id).x, m_top.nodePosition(id).y};
-                auto h1 = buildAdmissibleHeuristic(m_state.graph, toMetric(m_state.topCanvas.metric), pos);
-                auto h2 = buildAdmissibleHeuristic(m_state.graph, toMetric(m_state.bottomCanvas.metric), pos);
-                auto h = [h1, h2](int u, int v) { return std::min(h1(u,v), h2(u,v)); };
-                m_state.runRouting(h);
+                auto hTop = buildAdmissibleHeuristic(m_state.graph, toMetric(m_state.topCanvas.metric), pos);
+                auto hBot = buildAdmissibleHeuristic(m_state.graph, toMetric(m_state.bottomCanvas.metric), pos);
+                m_state.runRouting(hTop, hBot);
                 m_top.buildRoutingAnimation(m_state, m_state.topCanvas);
                 m_bot.buildRoutingAnimation(m_state, m_state.bottomCanvas);
             });
