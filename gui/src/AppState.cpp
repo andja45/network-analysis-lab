@@ -4,16 +4,6 @@ void AppState::runAnalysis() {
     result = analyze(graph, maxHops);
 }
 
-static Metric toMetric(MetricChoice p) {
-    switch (p) {
-        case MetricChoice::Fastest:     return costFastest();
-        case MetricChoice::Cheapest:    return costCheapest();
-        case MetricChoice::LeastLoaded: return costLeastLoaded();
-        case MetricChoice::MostReliable:return costMostReliable();
-        default:                        return costBalanced();
-    }
-}
-
 void AppState::runRouting(Heuristic h) {
     auto run = [&](RoutingCanvasState& c) {
         c.result = ::runRouting(graph, routingSrc, routingDst, toMetric(c.metric), h);

@@ -111,14 +111,17 @@ void App::leftPanel() {
                 if (!enabled) { ImGui::EndDisabled(); ImGui::TextDisabled("%s", disabledHint); }
             };
             action("Run Routing", canRoute, hint, [&] {
-                auto h = [&](int u, int v) {
-                    ImVec2 pu = m_top.nodePosition(u), pv = m_top.nodePosition(v);
-                    return hypotf(pu.x - pv.x, pu.y - pv.y) / 1000.0f;
-                };
+                NodePositions pos;
+                for (const auto& [id, _] : m_state.graph.nodes())
+                    pos[id] = {m_top.nodePosition(id).x, m_top.nodePosition(id).y};
+                auto h1 = buildAdmissibleHeuristic(m_state.graph, toMetric(m_state.topCanvas.metric), pos);
+                auto h2 = buildAdmissibleHeuristic(m_state.graph, toMetric(m_state.bottomCanvas.metric), pos);
+                auto h = [h1, h2](int u, int v) { return std::min(h1(u,v), h2(u,v)); };
                 m_state.runRouting(h);
                 m_top.buildRoutingAnimation(m_state, m_state.topCanvas);
                 m_bot.buildRoutingAnimation(m_state, m_state.bottomCanvas);
             });
+            ImGui::SliderFloat("max DCI", &m_state.maxDCI, 1.0f, 10.0f, "%.1f");
             action("Run DCI", m_state.topCanvas.result.dijkstra.found, "Run Routing first", [&] {
                 m_state.runResilience();
                 m_top.buildDCIAnimation(m_state.topCanvas);
@@ -129,7 +132,6 @@ void App::leftPanel() {
         ImGui::EndTabBar();
     }
 
-    ImGui::SliderFloat("max DCI", &m_state.maxDCI, 1.0f, 10.0f, "%.1f");
     ImGui::SliderFloat("Speed", &m_state.stepDelay, 0.05f, 1.0f, "%.2f s");
     ImGui::SeparatorText("Examples");
     if (ImGui::Button("Crossroads", {-1, 0})) loadExample(makeCrossroads(), LAYOUT_CROSSROADS, 7);

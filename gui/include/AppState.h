@@ -6,12 +6,23 @@
 #include "routing/RoutingAnalyzer.h"
 #include "routing/Metrics.h"
 #include <optional>
+#include <limits>
 
 enum class PanelMode { Reachability, Routing };
 enum class ViewMode { Neutral, BFS, Bridges, Routing, DCI };
 enum class AnimationState { Idle, Running, Done };
 enum class AlgoChoice { Dijkstra, AStar };
 enum class MetricChoice { Fastest, Cheapest, LeastLoaded, MostReliable, Balanced };
+
+inline Metric toMetric(MetricChoice p) {
+    switch (p) {
+        case MetricChoice::Fastest:     return costFastest();
+        case MetricChoice::Cheapest:    return costCheapest();
+        case MetricChoice::LeastLoaded: return costLeastLoaded();
+        case MetricChoice::MostReliable:return costMostReliable();
+        default:                        return costBalanced();
+    }
+}
 
 struct RoutingCanvasState {
     AlgoChoice algo = AlgoChoice::Dijkstra;
