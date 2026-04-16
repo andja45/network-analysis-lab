@@ -50,8 +50,10 @@ void App::leftPanel() {
     }
     ImGui::Separator();
 
+    PanelMode prevMode = m_state.panelMode;
     if (ImGui::BeginTabBar("##modes")) {
         if (ImGui::BeginTabItem("Reachability")) {
+            if (prevMode != PanelMode::Reachability) { syncClear(); m_state.viewMode = ViewMode::Neutral; }
             m_state.panelMode = PanelMode::Reachability;
             auto runAnim = [&](bool bfs) {
                 m_state.runAnalysis();
@@ -67,6 +69,7 @@ void App::leftPanel() {
             ImGui::EndTabItem();
         }
         if (ImGui::BeginTabItem("Routing")) {
+            if (prevMode != PanelMode::Routing) { syncClear(); m_state.viewMode = ViewMode::Neutral; }
             m_state.panelMode = PanelMode::Routing;
             if (highlightedButton("Split view", m_state.splitView, {-1, 0})) {
                 m_state.splitView = !m_state.splitView;
@@ -126,6 +129,7 @@ void App::leftPanel() {
         ImGui::EndTabBar();
     }
 
+    ImGui::SliderFloat("max DCI", &m_state.maxDCI, 1.0f, 10.0f, "%.1f");
     ImGui::SliderFloat("Speed", &m_state.stepDelay, 0.05f, 1.0f, "%.2f s");
     ImGui::SeparatorText("Examples");
     if (ImGui::Button("Crossroads", {-1, 0})) loadExample(makeCrossroads(), LAYOUT_CROSSROADS, 7);
@@ -219,7 +223,7 @@ void App::canvas() {
         if (m_state.routingSrc != -1) drawRing(list, r.nodePosition(m_state.routingSrc), orig, GOLD);
         if (m_state.routingDst != -1) drawRing(list, r.nodePosition(m_state.routingDst), orig, GOLD);
     };
-    drawSrcDst(dl, m_top, topOrigin);
+    if (m_state.panelMode == PanelMode::Routing) drawSrcDst(dl, m_top, topOrigin);
     if (m_state.pendingEdgeFrom != -1) {
         ImVec2 p = m_top.nodePosition(m_state.pendingEdgeFrom);
         dl->AddCircle({p.x + topOrigin.x, p.y + topOrigin.y}, 22.0f, AppTheme::PENDING_EDGE, 0, 2.0f);
@@ -296,9 +300,9 @@ void App::rightPanel() {
         return;
     }
 
-    float halfH = ImGui::GetContentRegionAvail().y / 2.0f;
+    float panelH = ImGui::GetContentRegionAvail().y / (m_state.splitView ? 2.0f : 1.0f);
     auto drawCanvasStats = [&](const RoutingCanvasState& c, const char* childId) {
-        ImGui::BeginChild(childId, {-1, halfH}, false);
+        ImGui::BeginChild(childId, {-1, panelH}, false);
         ImGui::Text("%s · %s", algoName(c.algo), metricName(c.metric));
         ImGui::Separator();
         const auto& res = (c.algo == AlgoChoice::Dijkstra) ? c.result.dijkstra : c.result.astar;
@@ -320,5 +324,5 @@ void App::rightPanel() {
         ImGui::EndChild();
     };
     drawCanvasStats(m_state.topCanvas, "##stats_top");
-    drawCanvasStats(m_state.bottomCanvas, "##stats_bot");
+    if (m_state.splitView) drawCanvasStats(m_state.bottomCanvas, "##stats_bot");
 }
