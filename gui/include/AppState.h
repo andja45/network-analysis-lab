@@ -41,6 +41,7 @@ struct AppState {
     float stepDelay = 0.4f;
     float timeSinceStep = 0.0f;
     int maxHops = -1;
+    float maxDCI = 2.0f;
 
     int routingSrc = -1;
     int routingDst = -1;

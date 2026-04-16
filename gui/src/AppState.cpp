@@ -31,7 +31,7 @@ void AppState::runRouting(Heuristic h) {
 
 void AppState::runResilience() {
     auto run = [&](RoutingCanvasState& c) {
-        c.dciResult = computeDCI(graph, routingSrc, routingDst, toMetric(c.metric), 2.0f);
+        c.dciResult = computeDCI(graph, routingSrc, routingDst, toMetric(c.metric), maxDCI);
         c.animationState = AnimationState::Running;
         c.animationStep = 0;
     };
